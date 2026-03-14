@@ -1,4 +1,4 @@
-# agent-commerce
+# agentic-commerce-skills
 
 让你的网站能被 AI Agent 发现、理解、下单。
 
@@ -13,18 +13,18 @@
 
 AI Agent 已经开始替用户浏览、购物、支付了。ChatGPT Shopping、Google AI Mode、Perplexity，以及无数自主 Agent，正在访问网站、读取商品数据、发起购买。
 
-如果你的网站没有 agent-commerce，你在这个全新渠道里就是隐形的。
+如果你的网站没有 agentic-commerce-skills，你在这个全新渠道里就是隐形的。
 
 问题是：目前有 20+ 个竞争协议（Google 阵营 vs OpenAI 阵营 vs 独立协议），没有统一标准，大多数商家完全不知道从哪开始。
 
-**agent-commerce** 把所有东西整合在一起 —— 协议索引帮你看清全局，可执行的 Skills 帮你实施改造，不断增长的实战案例库帮你（和你的 Agent）少走弯路。
+**agentic-commerce-skills** 把所有东西整合在一起 —— 协议索引帮你看清全局，可执行的 Skills 帮你实施改造，不断增长的实战案例库帮你（和你的 Agent）少走弯路。
 
 ## 这是什么
 
 **协议索引 + 可执行 Skills + 实战案例库**，让任何网站兼容 AI Agent。
 
 ```
-agent-commerce/
+agentic-commerce-skills/
 ├── protocols/          ← 协议索引：20+ 个协议，做什么、谁做的、官方链接
 ├── skills/
 │   ├── ar-discover/    ← 让 Agent 能发现你（llms.txt, agents.json, A2A）
@@ -108,8 +108,8 @@ Agent 读 SKILL.md
 ## 快速开始
 
 ```bash
-git clone https://github.com/recomby-ai/agent-commerce.git
-cd agent-commerce
+git clone https://github.com/recomby-ai/agentic-commerce-skills.git
+cd agentic-commerce-skills
 pip install requests
 
 # 给任何网站打分
