@@ -1,20 +1,35 @@
-# Agentic Commerce Skills
+# UCP Onboard
+
+English | [中文](README_CN.md)
 
 AI agent skills for onboarding merchants to [UCP (Universal Commerce Protocol)](https://github.com/Universal-Commerce-Protocol/ucp) — the open standard by Google, Shopify, and 20+ partners that lets AI agents discover and transact with businesses.
 
-## What This Does
+Currently covers product commerce. We're pushing for it to cover services too.
 
-These skills turn an AI agent into a UCP integration specialist. Give it a merchant's website URL, and it will:
+## What We're Building
 
-1. **Audit** the site for UCP readiness (structured data, payment providers, APIs)
-2. **Generate** a `/.well-known/ucp` business profile
-3. **Map** product catalogs to UCP schema format
-4. **Scaffold** checkout API code from official samples
-5. **Validate** the integration against official tools
+Give an AI agent a merchant's website URL, and it handles the full UCP integration:
 
 ```
-Merchant URL → audit → profile → catalog → checkout → validate → Live on UCP
+Merchant URL → Audit → Profile → Catalog → Checkout → Validate → Live on UCP
 ```
+
+## What We're Pushing For
+
+UCP currently defines `dev.ucp.shopping.*` — buying products. But commerce isn't just products. It's also **services**: consulting, design, AI agent labor, SaaS on-demand.
+
+We submitted [Issue #303](https://github.com/Universal-Commerce-Protocol/ucp/issues/303) to the UCP consortium, proposing a Services Vertical:
+
+| | Shopping (today) | Services (our proposal) |
+|---|---|---|
+| What's traded | Products (SKU, price, inventory) | Services (scope, deliverables, capability) |
+| Pricing | Fixed | Fixed / usage-based / outcome-based / hourly |
+| Fulfillment | Physical shipping | Digital delivery + acceptance verification |
+| Lifecycle | `purchased → shipped → delivered` | `booked → in_progress → delivered → verified → settled` |
+
+Imagine: a Shopify seller tells Gemini "help me find someone to optimize my AI search ranking" → agent discovers service providers via UCP → compares scope/pricing → books engagement → verifies delivery → settles payment. **All through the protocol, no platform middleman.**
+
+UCP's [Vendor Namespace mechanism](https://github.com/Universal-Commerce-Protocol/.github/blob/main/CONTRIBUTING.md) allows anyone to prototype via `com.{vendor}.*` and propose graduation to core once adoption is proven. That's our path.
 
 ## Skills
 
@@ -31,18 +46,23 @@ Merchant URL → audit → profile → catalog → checkout → validate → Liv
 ```bash
 pip install requests beautifulsoup4 jsonschema
 
-# 1. Audit a site
+# Full pipeline in one command
+python run_pipeline.py https://allbirds.com --name "Allbirds" --payment shopify
+
+# Or step by step:
+
+# 1. Audit
 python skills/ucp-audit/scripts/audit_site.py https://allbirds.com
 
-# 2. Generate a profile
+# 2. Generate profile
 python skills/ucp-profile/scripts/generate_profile.py \
   --domain example.com --name "My Store" --payment stripe --transport rest
 
-# 3. Map product catalog
+# 3. Map catalog
 python skills/ucp-catalog/scripts/map_catalog.py \
   --source shopify --url https://allbirds.com --currency USD
 
-# 4. Validate integration
+# 4. Validate
 python skills/ucp-validate/scripts/validate_ucp.py https://allbirds.com
 ```
 
@@ -50,9 +70,11 @@ python skills/ucp-validate/scripts/validate_ucp.py https://allbirds.com
 
 | Site | Audit Score | Validate | Notes |
 |------|------------|----------|-------|
-| allbirds.com | 65/100 | PASS 11/11 | Shopify, MCP transport |
-| glossier.com | 90/100 | PASS 11/11 | Shopify, MCP transport |
+| allbirds.com | 65/100 | PASS 11/11 | Shopify, MCP transport, 250 products / 2696 variants |
+| glossier.com | 90/100 | PASS 11/11 | Shopify, MCP transport, 127 products / 425 variants |
 | puddingheroes.com | 5/100 | FAIL 16/42 | Non-standard format, correctly flagged |
+
+See [`examples/glossier/`](examples/glossier/) for full sample output.
 
 ## How Validation Works
 
@@ -65,9 +87,48 @@ We don't reinvent the wheel. Validation references official tools:
 | Checkout behavior | [`conformance`](https://github.com/Universal-Commerce-Protocol/conformance) | Official test suite (12 Python test files) |
 | External discovery | [UCPchecker.com](https://ucpchecker.com) | Community validator (2,800+ merchants monitored) |
 
-## UCP Protocol Overview
+## Project Structure
 
-UCP lets AI agents (Gemini, ChatGPT, Claude, etc.) discover and purchase from merchants through a standard protocol:
+```
+├── run_pipeline.py                 One-command full pipeline
+├── AGENTS.md                       Agent startup instructions
+├── examples/glossier/              Real output samples
+└── skills/
+    ├── ucp-audit/
+    │   ├── SKILL.md                Agent instructions
+    │   └── scripts/audit_site.py   Website scanner
+    ├── ucp-profile/
+    │   ├── SKILL.md
+    │   └── scripts/generate_profile.py
+    ├── ucp-catalog/
+    │   ├── SKILL.md
+    │   └── scripts/map_catalog.py  Supports Shopify / CSV / JSON
+    ├── ucp-checkout/
+    │   └── SKILL.md                References official samples
+    └── ucp-validate/
+        ├── SKILL.md
+        └── scripts/validate_ucp.py
+```
+
+## Using with AI Agents
+
+Each `SKILL.md` is an instruction manual for AI agents. The agent reads it, runs the scripts, and produces deliverables.
+
+- **NanoClaw / OpenClaw users:** Copy `skills/` into your agent's skill path
+- **Claude Code users:** Point Claude at a SKILL.md and give it a merchant URL
+
+## Security
+
+UCP has built-in security mechanisms (defined in spec, but merchants must implement them):
+
+- **Message Signatures** (RFC 9421) — ECDSA signing of requests/responses, prevents tampering and impersonation
+- **AP2 Mandates** — Cryptographic proof of user purchase authorization (SD-JWT), prevents unauthorized purchases
+- **Signals** — Platform-observed environment data (IP, UA) for fraud prevention
+- **Buyer Consent** — GDPR/CCPA consent transmission
+
+See the [UCP Security spec](https://github.com/Universal-Commerce-Protocol/ucp/blob/main/docs/specification/signatures.md) for details.
+
+## UCP Protocol Overview
 
 ```
 AI Agent                          Merchant
@@ -85,49 +146,11 @@ AI Agent                          Merchant
    │◄── order confirmation ──────────┤
 ```
 
-**Key specs:**
+**Key resources:**
 - [UCP Specification](https://github.com/Universal-Commerce-Protocol/ucp)
 - [Official Samples](https://github.com/Universal-Commerce-Protocol/samples) (Python/FastAPI + Node.js/Hono)
 - [Official Python SDK](https://github.com/Universal-Commerce-Protocol/python-sdk)
-
-## Project Structure
-
-```
-skills/
-├── ucp-audit/
-│   ├── SKILL.md                    # Agent instructions
-│   └── scripts/audit_site.py       # Website scanner
-├── ucp-profile/
-│   ├── SKILL.md
-│   └── scripts/generate_profile.py # Profile generator
-├── ucp-catalog/
-│   ├── SKILL.md
-│   └── scripts/map_catalog.py      # Catalog mapper (Shopify/CSV/JSON)
-├── ucp-checkout/
-│   └── SKILL.md                    # References official samples
-└── ucp-validate/
-    ├── SKILL.md
-    └── scripts/validate_ucp.py     # Validation orchestrator
-```
-
-## Using with AI Agents
-
-Each `SKILL.md` is designed to be read by an AI agent (Claude, GPT, etc.) as a step-by-step instruction manual. The agent reads the skill, runs the scripts, and produces the deliverables.
-
-**For NanoClaw / OpenClaw users:** Copy the `skills/` directory into your agent's skill path.
-
-**For Claude Code users:** Point Claude at a SKILL.md and give it a merchant URL.
-
-## Security
-
-UCP has built-in security mechanisms that merchants should implement:
-
-- **Message Signatures** (RFC 9421) — ECDSA signing of all requests/responses
-- **AP2 Mandates** — Cryptographic proof of user purchase authorization (SD-JWT)
-- **Signals** — Platform-observed environment data for fraud prevention
-- **Buyer Consent** — GDPR/CCPA consent transmission
-
-See the [UCP Security spec](https://github.com/Universal-Commerce-Protocol/ucp/blob/main/docs/specification/signatures.md) for implementation details.
+- [Our Services Vertical Proposal (Issue #303)](https://github.com/Universal-Commerce-Protocol/ucp/issues/303)
 
 ## Contributing
 
