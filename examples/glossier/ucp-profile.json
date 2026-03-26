@@ -1,0 +1,149 @@
+{
+  "ucp": {
+    "version": "2026-01-23",
+    "services": {
+      "dev.ucp.shopping": [
+        {
+          "version": "2026-01-23",
+          "spec": "https://ucp.dev/specification/overview/",
+          "transport": "mcp",
+          "endpoint": "https://glossier.com/api/ucp/mcp",
+          "schema": "https://ucp.dev/services/shopping/openrpc.json"
+        },
+        {
+          "version": "2026-01-23",
+          "spec": "https://ucp.dev/specification/overview/",
+          "transport": "embedded",
+          "schema": "https://ucp.dev/services/shopping/embedded.openrpc.json"
+        }
+      ]
+    },
+    "capabilities": {
+      "dev.ucp.shopping.checkout": [
+        {
+          "version": "2026-01-23",
+          "spec": "https://ucp.dev/2026-01-23/specification/checkout",
+          "schema": "https://ucp.dev/2026-01-23/schemas/shopping/checkout.json"
+        }
+      ],
+      "dev.ucp.shopping.catalog.search": [
+        {
+          "version": "2026-01-23",
+          "spec": "https://ucp.dev/2026-01-23/specification/catalog/search",
+          "schema": "https://ucp.dev/2026-01-23/schemas/shopping/catalog_search.json"
+        }
+      ],
+      "dev.ucp.shopping.catalog.lookup": [
+        {
+          "version": "2026-01-23",
+          "spec": "https://ucp.dev/2026-01-23/specification/catalog/lookup",
+          "schema": "https://ucp.dev/2026-01-23/schemas/shopping/catalog_lookup.json"
+        }
+      ],
+      "dev.ucp.shopping.fulfillment": [
+        {
+          "version": "2026-01-23",
+          "spec": "https://ucp.dev/2026-01-23/specification/fulfillment",
+          "schema": "https://ucp.dev/2026-01-23/schemas/shopping/fulfillment.json",
+          "extends": "dev.ucp.shopping.checkout",
+          "config": {
+            "allows_multi_destination": {
+              "shipping": false
+            },
+            "allows_method_combinations": [
+              [
+                "shipping"
+              ]
+            ]
+          }
+        }
+      ],
+      "dev.ucp.shopping.discount": [
+        {
+          "version": "2026-01-23",
+          "spec": "https://ucp.dev/2026-01-23/specification/discount",
+          "schema": "https://ucp.dev/2026-01-23/schemas/shopping/discount.json",
+          "extends": "dev.ucp.shopping.checkout"
+        }
+      ],
+      "dev.ucp.shopping.order": [
+        {
+          "version": "2026-01-23",
+          "spec": "https://ucp.dev/2026-01-23/specs/shopping/order",
+          "schema": "https://ucp.dev/2026-01-23/schemas/shopping/order.json"
+        }
+      ]
+    },
+    "payment_handlers": {
+      "com.google.pay": [
+        {
+          "id": "gpay",
+          "version": "2026-01-11",
+          "spec": "https://pay.google.com/gp/p/ucp/2026-01-11/",
+          "schema": "https://pay.google.com/gp/p/ucp/2026-01-11/schemas/config.json",
+          "config": {
+            "api_version": 2,
+            "api_version_minor": 0,
+            "merchant_info": {
+              "merchant_name": "Glossier",
+              "merchant_id": "FILL_IN",
+              "merchant_origin": "glossier.com"
+            },
+            "allowed_payment_methods": [
+              {
+                "type": "CARD",
+                "parameters": {
+                  "allowed_auth_methods": [
+                    "PAN_ONLY",
+                    "CRYPTOGRAM_3DS"
+                  ],
+                  "allowed_card_networks": [
+                    "VISA",
+                    "MASTERCARD",
+                    "AMEX",
+                    "DISCOVER"
+                  ]
+                },
+                "tokenization_specification": {
+                  "type": "PAYMENT_GATEWAY",
+                  "parameters": [
+                    {
+                      "key": "gateway",
+                      "value": "shopify"
+                    },
+                    {
+                      "key": "gateway_merchant_id",
+                      "value": "FILL_IN"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "dev.shopify.card": [
+        {
+          "id": "shopify.card",
+          "version": "2026-01-15",
+          "spec": "https://ucp.dev/specification/payment-handler-guide",
+          "schema": "https://shopify.dev/ucp/card-payment-handler/2026-01-15/config.json",
+          "config": {
+            "payment_methods": [
+              {
+                "type": "card",
+                "enabled_card_brands": [
+                  "visa",
+                  "master",
+                  "american_express",
+                  "discover",
+                  "diners_club"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
