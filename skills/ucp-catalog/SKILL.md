@@ -24,7 +24,7 @@ added in this repo.
 ## Run
 
 ```bash
-python skills/ucp-catalog/scripts/map_catalog.py \
+python ${CLAUDE_SKILL_DIR}/scripts/map_catalog.py \
   --source shopify \
   --url https://example.com \
   --currency USD \

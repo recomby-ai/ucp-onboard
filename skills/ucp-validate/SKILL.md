@@ -15,7 +15,7 @@ Run a lightweight validation pass against a deployed UCP profile.
 ## Run
 
 ```bash
-python skills/ucp-validate/scripts/validate_ucp.py \
+python ${CLAUDE_SKILL_DIR}/scripts/validate_ucp.py \
   https://example.com \
   --output store/clients/example/validation-report.md
 ```

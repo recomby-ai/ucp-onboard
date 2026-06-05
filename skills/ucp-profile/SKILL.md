@@ -17,17 +17,17 @@ Generate a public UCP discovery profile for a merchant.
 - Business/display name
 - Payment provider: `stripe`, `shopify`, or `adyen`
 - Transport: `rest` or `mcp`
-- Capabilities: comma-separated list from `checkout,catalog,fulfillment,discount,order`
+- Capabilities: comma-separated list from `checkout,cart,catalog,fulfillment,discount,order`
 
 ## Run
 
 ```bash
-python skills/ucp-profile/scripts/generate_profile.py \
+python ${CLAUDE_SKILL_DIR}/scripts/generate_profile.py \
   --domain example.com \
   --name "Example Store" \
   --payment stripe \
   --transport rest \
-  --caps checkout,catalog,fulfillment,discount,order \
+  --caps checkout,cart,catalog,fulfillment,discount,order \
   --output store/clients/example/ucp-profile.json
 ```
 

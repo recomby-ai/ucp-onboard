@@ -26,7 +26,7 @@ focused on feed quality and schema-shaped output, not payment or order capture.
 2. Export ACP feed JSON:
 
 ```bash
-python skills/acp-feed/scripts/export_acp_feed.py \
+python ${CLAUDE_SKILL_DIR}/scripts/export_acp_feed.py \
   --input store/clients/{client}/catalog.json \
   --output store/clients/{client}/acp-feed.json \
   --target-country US
