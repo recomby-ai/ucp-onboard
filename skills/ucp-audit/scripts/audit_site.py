@@ -235,7 +235,7 @@ def check_api(base_url, platform):
     return False, "none"
 
 
-def calculate_score(profile, platform, structured, payments, has_api):
+def calculate_score(profile, platform, structured, payments, has_api, secure=True):
     """Calculate UCP readiness score (0-100)."""
     score = 0
 
@@ -280,13 +280,13 @@ def calculate_score(profile, platform, structured, payments, has_api):
         score += 10
 
     # HTTPS (5)
-    # Always true if we got this far with https URL
-    score += 5
+    if secure:
+        score += 5
 
     return score
 
 
-def generate_report(url, profile, platform, platform_conf, structured, payments, has_api, api_type, score):
+def generate_report(url, profile, platform, structured, payments, has_api, api_type, score, secure=True):
     """Generate markdown audit report."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     domain = urlparse(url).hostname
@@ -396,7 +396,7 @@ def generate_report(url, profile, platform, platform_conf, structured, payments,
 | Payment provider detected | 15 | {"✅" if all_payments else "❌"} |
 | UCP-compatible provider | 5 | {"✅" if any(p in (UCP_COMPATIBLE_PROVIDERS | {"google", "shopify"}) for p in all_payments) else "❌"} |
 | Public product API | 10 | {"✅" if has_api else "❌"} |
-| HTTPS enabled | 5 | ✅ |
+| HTTPS enabled | 5 | {"✅" if secure else "❌"} |
 | **Total** | **{score}** | |
 """
     return report
@@ -446,25 +446,27 @@ def main():
                 if len(product_links) >= 2:
                     break
 
+    # Fetch each product page once, then reuse its HTML for both structured
+    # data extraction and payment detection.
+    product_pages = []
     for plink in product_links:
         pr, _ = fetch(plink)
         if pr:
-            psoup = BeautifulSoup(pr.text, "html.parser")
-            pdata = extract_structured_data(psoup)
-            # Merge product fields
-            for k, v in pdata["product_fields"].items():
-                structured["product_fields"].setdefault(k, v)
-            for t in pdata["types_found"]:
-                if t not in structured["types_found"]:
-                    structured["types_found"].append(t)
+            product_pages.append(pr.text)
+
+    for page_text in product_pages:
+        psoup = BeautifulSoup(page_text, "html.parser")
+        pdata = extract_structured_data(psoup)
+        # Merge product fields
+        for k, v in pdata["product_fields"].items():
+            structured["product_fields"].setdefault(k, v)
+        for t in pdata["types_found"]:
+            if t not in structured["types_found"]:
+                structured["types_found"].append(t)
 
     # Step 4: Payment detection
     print("  [4/5] Detecting payment methods...")
-    body = r.text if r else ""
-    for plink in product_links:
-        pr, _ = fetch(plink)
-        if pr:
-            body += pr.text
+    body = (r.text if r else "") + "".join(product_pages)
     payments = detect_payments(body)
 
     # Step 5: API check
@@ -472,7 +474,8 @@ def main():
     has_api, api_type = check_api(url, platform[0])
 
     # Calculate score
-    score = calculate_score(profile, platform[0], structured, payments, has_api)
+    secure = urlparse(url).scheme == "https"
+    score = calculate_score(profile, platform[0], structured, payments, has_api, secure)
     result_data = {
         "url": url,
         "score": score,
@@ -486,7 +489,7 @@ def main():
     if args.json:
         output = json.dumps(result_data, indent=2)
     else:
-        output = generate_report(url, profile, platform, platform, structured, payments, has_api, api_type, score)
+        output = generate_report(url, profile, platform, structured, payments, has_api, api_type, score, secure)
 
     if args.output:
         with open(args.output, "w") as f:
