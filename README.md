@@ -2,8 +2,8 @@
 
 English | [中文](README_CN.md)
 
-Codex plugin and AI-agent skill pack for onboarding merchants to agentic
-commerce protocols.
+Codex and Claude Code plugin, and AI-agent skill pack, for onboarding merchants
+to agentic commerce protocols.
 
 The current core supports [UCP (Universal Commerce Protocol)](https://github.com/Universal-Commerce-Protocol/ucp)
 readiness, profile generation, catalog mapping, sandbox checkout server
@@ -77,11 +77,28 @@ python skills/acp-feed/scripts/export_acp_feed.py \
 python skills/ucp-validate/scripts/validate_ucp.py https://allbirds.com
 ```
 
+## Install as a Claude Code plugin
+
+The repo ships a Claude Code plugin manifest and a same-repo marketplace, so it
+can be installed directly from git:
+
+```bash
+# Add this repo as a marketplace, then install the plugin
+claude plugin marketplace add recomby-ai/ucp-onboard
+claude plugin install ucp-onboard@ucp-onboard
+```
+
+The six skills (`ucp-audit`, `ucp-profile`, `ucp-catalog`, `acp-feed`,
+`ucp-checkout`, `ucp-validate`, plus `ucp-services-vertical`) are auto-discovered
+from `skills/` and exposed as `ucp-onboard:<skill>`. The same `skills/` directory
+also backs the Codex plugin (`.codex-plugin/plugin.json`).
+
 ## Current Implementation Status
 
 | Area | Status |
 | --- | --- |
 | Codex plugin manifest | Implemented |
+| Claude Code plugin manifest + marketplace | Implemented |
 | UCP audit | Implemented |
 | UCP profile generation | Implemented, with placeholders that must be filled |
 | Catalog mapping | Implemented for Shopify public products.json, CSV, and JSON |
@@ -117,6 +134,8 @@ for deeper conformance checks:
 ## Project Structure
 
 ```text
+├── .claude-plugin/plugin.json      Claude Code plugin manifest
+├── .claude-plugin/marketplace.json Claude Code marketplace entry (source ".")
 ├── .codex-plugin/plugin.json       Codex plugin manifest
 ├── run_pipeline.py                 UCP-oriented pipeline
 ├── AGENTS.md                       Agent startup instructions
