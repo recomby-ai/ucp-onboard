@@ -2,8 +2,8 @@
 
 [English](README.md) | 中文
 
-一个面向 AI agent 的商家接入插件和 skills 包，用来准备 UCP 与 OpenAI
-Agentic Commerce Protocol (ACP) 的电商接入材料。
+一个面向 AI agent 的商家接入插件（Codex 与 Claude Code 双插件）和 skills 包，
+用来准备 UCP 与 OpenAI Agentic Commerce Protocol (ACP) 的电商接入材料。
 
 当前主线支持 [UCP（Universal Commerce Protocol）](https://github.com/Universal-Commerce-Protocol/ucp)
 的 readiness audit、profile 生成、catalog 映射、sandbox checkout server 生成和
@@ -46,7 +46,7 @@ runtime validation。同时新增 OpenAI [Agentic Commerce Protocol](https://dev
 ## 快速开始
 
 ```bash
-pip install requests beautifulsoup4 jsonschema
+pip install requests beautifulsoup4
 
 # UCP 方向的一键流程
 python run_pipeline.py https://allbirds.com --name "Allbirds" --payment shopify
@@ -80,6 +80,7 @@ python skills/ucp-validate/scripts/validate_ucp.py https://allbirds.com
 | 模块 | 状态 |
 | --- | --- |
 | Codex plugin manifest | 已实现 |
+| Claude Code plugin manifest + marketplace | 已实现 |
 | UCP audit | 已实现 |
 | UCP profile 生成 | 已实现，但部分 payment 字段需要人工填充 |
 | Catalog mapping | 已支持 Shopify public products.json、CSV、JSON |
@@ -88,9 +89,24 @@ python skills/ucp-validate/scripts/validate_ucp.py https://allbirds.com
 | Runtime validation gate | 已支持 profile、catalog、checkout create/retrieve/update/cancel |
 | 完整官方 UCP conformance | 仍交给官方工具 |
 
+## 作为 Claude Code 插件安装
+
+仓库内置 Claude Code 插件 manifest 和同仓库 marketplace，可直接从 git 安装：
+
+```bash
+# 把本仓库加为 marketplace，再安装插件
+claude plugin marketplace add recomby-ai/ucp-onboard
+claude plugin install ucp-onboard@ucp-onboard
+```
+
+`skills/` 下的各 skill 会被自动发现，以 `ucp-onboard:<skill>` 暴露；同一份
+`skills/` 目录也同时支撑 Codex 插件（`.codex-plugin/plugin.json`）。
+
 ## 项目结构
 
 ```text
+├── .claude-plugin/plugin.json      Claude Code 插件 manifest
+├── .claude-plugin/marketplace.json Claude Code marketplace 条目（source "."）
 ├── .codex-plugin/plugin.json       Codex 插件 manifest
 ├── run_pipeline.py                 UCP 方向 pipeline
 ├── AGENTS.md                       agent 启动指南

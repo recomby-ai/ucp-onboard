@@ -21,6 +21,76 @@ TIMEOUT = 15
 VERSION_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 NETWORK_TRANSPORTS = {"rest", "mcp", "a2a"}
 
+# Offline official-schema validation against vendored UCP schemas.
+SCHEMA_VERSION = "2026-04-08"
+SCHEMA_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "..", "..",
+    "refs", "ucp-schema", SCHEMA_VERSION,
+)
+SCHEMA_BASE = "https://ucp.local/"
+PROFILE_SCHEMA_PATH = "discovery/profile_schema.json"
+
+
+def build_schema_registry(schema_dir):
+    """Load vendored UCP schemas into a referencing Registry keyed by file path.
+
+    The upstream $refs resolve by file path relative to source/, not by $id, so
+    we register each file under a path-based URI and drop its $id.
+    """
+    from referencing import Registry, Resource
+    from referencing.jsonschema import DRAFT202012
+
+    resources = []
+    for root, _, files in os.walk(schema_dir):
+        for filename in files:
+            if not filename.endswith(".json"):
+                continue
+            full = os.path.join(root, filename)
+            rel = os.path.relpath(full, schema_dir).replace(os.sep, "/")
+            with open(full, encoding="utf-8") as f:
+                doc = json.load(f)
+            doc.pop("$id", None)
+            resources.append((SCHEMA_BASE + rel, Resource.from_contents(doc, default_specification=DRAFT202012)))
+    return Registry().with_resources(resources)
+
+
+def validate_profile_schema(data, schema_dir=SCHEMA_DIR):
+    """Validate a profile dict against the vendored official UCP profile schema.
+
+    Returns (status, detail, errors) where status is 'ok', 'fail', or 'skip'.
+    Skips gracefully when jsonschema/referencing or the vendored schemas are
+    unavailable, so this stays an additive, non-fatal check.
+    """
+    try:
+        import jsonschema
+        from referencing import Registry  # noqa: F401
+    except ImportError:
+        return "skip", "jsonschema/referencing not installed", []
+    if not os.path.isdir(schema_dir):
+        return "skip", f"vendored schemas not found ({schema_dir})", []
+    try:
+        registry = build_schema_registry(schema_dir)
+        validator = jsonschema.Draft202012Validator(
+            {"$ref": SCHEMA_BASE + PROFILE_SCHEMA_PATH}, registry=registry)
+        errors = sorted(validator.iter_errors(data), key=lambda e: e.json_path)
+    except Exception as exc:  # noqa: BLE001 - keep validation non-fatal
+        return "skip", f"schema validation could not run: {exc}", []
+    if errors:
+        details = [f"{e.json_path or '$'}: {e.message}" for e in errors]
+        return "fail", f"{len(errors)} schema error(s)", details
+    return "ok", "Profile conforms to official UCP profile schema", []
+
+
+def check_schema(data, checks):
+    status, detail, errors = validate_profile_schema(data)
+    if status == "skip":
+        add_check(checks, "schema", "official profile schema", "SKIP", "INFO", detail)
+    elif status == "ok":
+        add_check(checks, "schema", "official profile schema", "PASS", "ERROR", f"{detail} ({SCHEMA_VERSION})")
+    else:
+        joined = "; ".join(errors[:3])
+        add_check(checks, "schema", "official profile schema", "FAIL", "ERROR", f"{detail}: {joined}"[:400])
+
 
 def add_check(checks, layer, name, status, severity, detail):
     checks.append({
@@ -416,6 +486,7 @@ def main():
     else:
         add_check(checks, "profile", "profile fetch", "PASS", "CRITICAL", f"Loaded {profile_url}")
         check_profile_structure(data, checks)
+        check_schema(data, checks)
         check_url_reachability(data, checks)
         endpoint = service_endpoint(data, args.runtime_endpoint)
 

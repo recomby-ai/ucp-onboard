@@ -64,7 +64,7 @@ Client deliverables go to `store/clients/{client_name}/`:
 
 - Amounts are always minor units. USD 29.99 becomes `2999`.
 - Dates are RFC 3339.
-- UCP version currently used by scripts: `2026-01-23`.
+- UCP version currently used by scripts: `2026-04-08` (single source: `UCP_VERSION` in `skills/ucp-profile/scripts/generate_profile.py`).
 - Never include API secret keys, payment tokens, or customer data in public profiles or feeds.
 - Do not claim unsupported connectors are implemented.
 - Do not claim ChatGPT Commerce partner approval unless the user provides it.

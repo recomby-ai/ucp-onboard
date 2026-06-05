@@ -20,7 +20,7 @@ Generate a sandbox FastAPI server for UCP catalog and checkout preflight.
 ## Generate
 
 ```bash
-python skills/ucp-checkout/scripts/generate_api.py \
+python ${CLAUDE_SKILL_DIR}/scripts/generate_api.py \
   --profile store/clients/{client}/ucp-profile.json \
   --catalog store/clients/{client}/catalog.json \
   --output-dir store/clients/{client}/ucp-server
@@ -47,7 +47,7 @@ cd store/clients/{client}/ucp-server
 pip install -r requirements.txt
 uvicorn app.main:app --port 8000
 
-python ../../../skills/ucp-validate/scripts/validate_ucp.py \
+python ${CLAUDE_SKILL_DIR}/../ucp-validate/scripts/validate_ucp.py \
   http://localhost:8000 \
   --runtime-endpoint http://localhost:8000/ucp/v1
 ```

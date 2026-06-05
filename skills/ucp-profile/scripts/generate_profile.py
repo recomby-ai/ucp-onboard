@@ -2,7 +2,8 @@
 """Generate a UCP business profile (/.well-known/ucp) for a merchant.
 
 Based on official UCP samples discovery_profile.json template format.
-Validates output against official profile_schema.json.
+Performs basic placeholder/structure checks only; run the official
+ucp-schema CLI for full schema validation.
 
 Usage:
   python generate_profile.py --domain example.com --name "My Store" --payment stripe
@@ -14,7 +15,7 @@ import json
 import sys
 from copy import deepcopy
 
-UCP_VERSION = "2026-01-23"
+UCP_VERSION = "2026-04-08"
 
 # === Payment handler templates (from real Shopify/Google/Stripe profiles) ===
 
@@ -130,6 +131,16 @@ CAPABILITIES = {
             }
         ],
     },
+    "cart": {
+        "dev.ucp.shopping.cart": [
+            {
+                "version": UCP_VERSION,
+                "spec": f"https://ucp.dev/{UCP_VERSION}/specification/cart",
+                "schema": f"https://ucp.dev/{UCP_VERSION}/schemas/shopping/cart.json",
+                "extends": "dev.ucp.shopping.checkout",
+            }
+        ]
+    },
     "fulfillment": {
         "dev.ucp.shopping.fulfillment": [
             {
@@ -158,7 +169,7 @@ CAPABILITIES = {
         "dev.ucp.shopping.order": [
             {
                 "version": UCP_VERSION,
-                "spec": f"https://ucp.dev/{UCP_VERSION}/specs/shopping/order",
+                "spec": f"https://ucp.dev/{UCP_VERSION}/specification/order",
                 "schema": f"https://ucp.dev/{UCP_VERSION}/schemas/shopping/order.json",
             }
         ]
@@ -248,7 +259,7 @@ def main():
     parser.add_argument("--transport", default="rest", choices=["rest", "mcp"],
                         help="API transport (default: rest)")
     parser.add_argument("--caps", default="checkout,fulfillment,discount,order",
-                        help="Comma-separated capabilities: checkout,catalog,fulfillment,discount,order")
+                        help="Comma-separated capabilities: checkout,cart,catalog,fulfillment,discount,order")
     parser.add_argument("--output", "-o", help="Output file path (default: stdout)")
     args = parser.parse_args()
 

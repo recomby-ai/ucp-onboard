@@ -1,0 +1,14 @@
+{
+  "name": "ucp-onboard",
+  "owner": {
+    "name": "recomby-ai",
+    "url": "https://github.com/recomby-ai"
+  },
+  "plugins": [
+    {
+      "name": "ucp-onboard",
+      "source": ".",
+      "description": "Audit merchants and prepare UCP and OpenAI ACP commerce integrations (audit, profile, catalog, cart, checkout, validate, ACP feed)."
+    }
+  ]
+}

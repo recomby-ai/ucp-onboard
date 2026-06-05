@@ -1,4 +1,5 @@
 requests>=2.31.0
 beautifulsoup4>=4.12.0
-jsonschema>=4.20.0
-jinja2>=3.1.0
+# Powers ucp-validate's offline official-schema validation (referencing ships
+# with jsonschema>=4.18). Optional at runtime: the check skips if absent.
+jsonschema>=4.18.0

@@ -1,7 +1,7 @@
 {
   "name": "ucp-onboard",
-  "version": "0.2.0",
-  "description": "Agent skills for auditing merchants and preparing UCP and OpenAI ACP commerce integrations.",
+  "version": "0.3.0",
+  "description": "Agent skills for auditing merchants and preparing UCP (2026-04-08, incl. cart) and OpenAI ACP commerce integrations.",
   "author": {
     "name": "recomby-ai",
     "url": "https://github.com/recomby-ai"
@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "UCP Onboard",
     "shortDescription": "Audit merchants and prepare agentic commerce feeds and profiles.",
-    "longDescription": "A commerce onboarding plugin for AI agents. It audits merchant sites, maps product catalogs, generates UCP profiles, exports OpenAI Agentic Commerce Protocol feeds, and validates deployed integrations.",
+    "longDescription": "A commerce onboarding plugin for AI agents. It audits merchant sites, maps product catalogs, generates UCP profiles (UCP 2026-04-08, including the cart capability), generates a sandbox checkout server, exports OpenAI Agentic Commerce Protocol feeds, and validates deployed integrations.",
     "developerName": "recomby-ai",
     "category": "Productivity",
     "capabilities": [

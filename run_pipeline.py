@@ -76,9 +76,12 @@ def main():
         print("\n[WARN] Audit had issues, continuing anyway...")
 
     # Step 2: Generate profile
-    caps = "checkout,fulfillment,discount,order"
-    if args.source == "shopify":
-        caps = "checkout,catalog,fulfillment,discount,order"
+    # Declare the catalog capability only when a catalog will actually be
+    # produced (shopify source, or csv/json with a catalog file), so the
+    # profile's declared capabilities match the deliverables we generate.
+    will_produce_catalog = args.source == "shopify" or bool(args.catalog_file)
+    caps = ("checkout,catalog,cart,fulfillment,discount,order"
+            if will_produce_catalog else "checkout,fulfillment,discount,order")
 
     profile_output = os.path.join(output_dir, "ucp-profile.json")
     ok = run_script(

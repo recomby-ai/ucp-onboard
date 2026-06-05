@@ -2,8 +2,8 @@
 
 English | [中文](README_CN.md)
 
-Codex plugin and AI-agent skill pack for onboarding merchants to agentic
-commerce protocols.
+Codex and Claude Code plugin, and AI-agent skill pack, for onboarding merchants
+to agentic commerce protocols.
 
 The current core supports [UCP (Universal Commerce Protocol)](https://github.com/Universal-Commerce-Protocol/ucp)
 readiness, profile generation, catalog mapping, sandbox checkout server
@@ -48,7 +48,7 @@ data once, then protocol exporters prepare UCP or OpenAI ACP outputs.
 ## Quick Start
 
 ```bash
-pip install requests beautifulsoup4 jsonschema
+pip install requests beautifulsoup4
 
 # UCP-oriented pipeline
 python run_pipeline.py https://allbirds.com --name "Allbirds" --payment shopify
@@ -77,17 +77,35 @@ python skills/acp-feed/scripts/export_acp_feed.py \
 python skills/ucp-validate/scripts/validate_ucp.py https://allbirds.com
 ```
 
+## Install as a Claude Code plugin
+
+The repo ships a Claude Code plugin manifest and a same-repo marketplace, so it
+can be installed directly from git:
+
+```bash
+# Add this repo as a marketplace, then install the plugin
+claude plugin marketplace add recomby-ai/ucp-onboard
+claude plugin install ucp-onboard@ucp-onboard
+```
+
+The six skills (`ucp-audit`, `ucp-profile`, `ucp-catalog`, `acp-feed`,
+`ucp-checkout`, `ucp-validate`, plus `ucp-services-vertical`) are auto-discovered
+from `skills/` and exposed as `ucp-onboard:<skill>`. The same `skills/` directory
+also backs the Codex plugin (`.codex-plugin/plugin.json`).
+
 ## Current Implementation Status
 
 | Area | Status |
 | --- | --- |
 | Codex plugin manifest | Implemented |
+| Claude Code plugin manifest + marketplace | Implemented |
 | UCP audit | Implemented |
 | UCP profile generation | Implemented, with placeholders that must be filled |
 | Catalog mapping | Implemented for Shopify public products.json, CSV, and JSON |
 | OpenAI ACP feed export | Implemented from normalized catalog JSON |
 | UCP checkout server generation | Implemented for sandbox Python/FastAPI |
 | Runtime validation gate | Implemented for profile, catalog, checkout create/retrieve/update/cancel |
+| Offline official profile-schema validation | Implemented against vendored UCP `2026-04-08` schemas (jsonschema) |
 | Full official UCP conformance testing | Still delegated to official tools |
 
 ## Tested Against Real Sites
@@ -108,6 +126,7 @@ for deeper conformance checks:
 | Layer | Tool | Source |
 | --- | --- | --- |
 | Profile structure | `validate_ucp.py` | Required fields, capability basics, URL reachability |
+| Offline profile schema | `validate_ucp.py` + `refs/ucp-schema/` | Vendored official UCP profile schema (`2026-04-08`) via jsonschema |
 | Runtime catalog | `validate_ucp.py` | Search and lookup endpoint preflight |
 | Runtime checkout | `validate_ucp.py` | Create, retrieve, update, cancel, totals rules |
 | Full UCP schema validation | [`ucp-schema`](https://github.com/Universal-Commerce-Protocol/ucp-schema) | Official Rust CLI |
@@ -117,6 +136,8 @@ for deeper conformance checks:
 ## Project Structure
 
 ```text
+├── .claude-plugin/plugin.json      Claude Code plugin manifest
+├── .claude-plugin/marketplace.json Claude Code marketplace entry (source ".")
 ├── .codex-plugin/plugin.json       Codex plugin manifest
 ├── run_pipeline.py                 UCP-oriented pipeline
 ├── AGENTS.md                       Agent startup instructions

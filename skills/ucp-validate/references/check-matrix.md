@@ -5,6 +5,7 @@ Validation is layered:
 | Layer | Checks |
 | --- | --- |
 | Profile | profile exists, JSON parses, `ucp` root, version, services, capabilities, payment handlers |
+| Schema | offline validation against the vendored official UCP profile schema (`refs/ucp-schema/<version>/`) when `jsonschema` is installed |
 | Namespace / URLs | spec/schema URL reachability spot checks |
 | Catalog | search/lookup endpoints respond and return valid product/variant basics |
 | Checkout | create/retrieve/update/cancel lifecycle, status, links, totals |
