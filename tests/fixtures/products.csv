@@ -1,0 +1,2 @@
+id,title,description,price,sku,image_url,category,available
+prod_csv_1,CSV Shoe,A shoe from CSV,49.99,CSV-001,https://example.com/csv-shoe.jpg,Shoes,true

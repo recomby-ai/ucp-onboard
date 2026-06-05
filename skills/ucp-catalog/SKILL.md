@@ -1,180 +1,65 @@
 ---
 name: ucp-catalog
 description: >
-  Maps a merchant's product data to UCP catalog schema format.
-  Supports Shopify, WooCommerce, CSV, and web scraping as data sources.
-  Outputs UCP-compliant product JSON with field mapping report.
-  Use after ucp-audit to convert existing product data.
-argument-hint: "[client name] [data source: shopify|woocommerce|csv|url]"
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, WebFetch
+  Maps merchant product data from Shopify products.json, CSV, or existing JSON
+  into the repo's UCP-style catalog JSON. Use after ucp-audit when product data
+  needs to be normalized before UCP checkout work or OpenAI ACP feed export.
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
 # UCP Catalog Mapper
 
-Extract merchant product data from various sources and transform it into UCP catalog schema format.
+Normalize merchant product data into `catalog.json`.
 
-## Prerequisites
-- `store/clients/{client_name}/audit-report.md` must exist
-- For Shopify: store URL (public storefront API)
-- For WooCommerce: store URL + API credentials
-- For CSV: file path
-- For URL: product page URLs to scrape
+## Inputs
 
-## Step 1: Connect to Data Source
+- Shopify public `products.json`: `--source shopify --url https://store.com`
+- CSV export: `--source csv --file products.csv`
+- Existing JSON: `--source json --file products.json`
 
-### Shopify
-```python
-# Public Storefront API — no auth needed
-GET https://{store}.myshopify.com/products.json?limit=250
-# Paginate with ?page=2, ?page=3, etc.
+The script currently does not implement authenticated WooCommerce, BigCommerce,
+or browser scraping adapters. Treat those as future connectors unless code is
+added in this repo.
+
+## Run
+
+```bash
+python skills/ucp-catalog/scripts/map_catalog.py \
+  --source shopify \
+  --url https://example.com \
+  --currency USD \
+  --output store/clients/example/catalog.json
 ```
 
-### WooCommerce
-```python
-# REST API — needs consumer_key + consumer_secret
-GET https://{store}/wp-json/wc/v3/products?per_page=100
-# Auth: query param ?consumer_key=ck_xxx&consumer_secret=cs_xxx
-```
+## Output Contract
 
-### CSV
-```python
-# Expect columns: title, price, description, sku, image_url, category, stock_status
-import csv
-```
+Write:
 
-### Web Scraping
-```python
-# Parse JSON-LD and structured data from product pages
-# Fallback: parse HTML for price, title, images
-```
+- `catalog.json`
+- `mapping-report.md` when `--report` is provided
 
-## Step 2: Field Mapping
+`catalog.json` contains:
 
-Transform source fields to UCP product schema:
+- `products[]`
+- `metadata.source`
+- `metadata.total_products`
+- `metadata.total_variants`
+- `metadata.currency`
+- `metadata.validation_errors`
 
-### Product Level (required: id, title, description, price_range, variants)
+Product records should include stable `id`, `title`, `description`,
+`price_range`, and at least one `variant`. Variant prices are integers in ISO
+4217 minor units.
 
-| UCP Field | Shopify Source | WooCommerce Source | CSV Source |
-|-----------|---------------|-------------------|-----------|
-| `id` | `id` (string) | `id` (string) | row index or sku |
-| `title` | `title` | `name` | `title` |
-| `description.plain` | `body_html` (strip tags) | `description` (strip tags) | `description` |
-| `price_range.min/max` | min/max of `variants[].price` | `price` / `sale_price` | `price` |
-| `url` | `url` or construct from handle | `permalink` | — |
-| `categories[]` | `product_type` | `categories[].name` | `category` |
-| `media[]` | `images[].src` | `images[].src` | `image_url` |
-| `tags[]` | `tags` (split comma) | `tags[].name` | `tags` |
+## Hard Rules
 
-### Variant Level (required: id, title, description, price)
+- Never fabricate title, price, availability, SKU, or image data.
+- Convert prices to minor units: USD 29.99 becomes `2999`; JPY has no decimal
+  multiplier.
+- If validation reports errors, keep the output but clearly report the problem
+  before using it downstream.
 
-| UCP Field | Shopify Source | WooCommerce Source |
-|-----------|---------------|-------------------|
-| `id` | `variants[].id` | `variations[].id` |
-| `title` | `variants[].title` | `variations[].attributes` joined |
-| `description` | inherit from product | inherit from product |
-| `price.amount` | `variants[].price` × 100 (to minor units) | `price` × 100 |
-| `price.currency` | store currency setting | store currency setting |
-| `sku` | `variants[].sku` | `variations[].sku` |
-| `availability.available` | `variants[].available` | `stock_status == "instock"` |
-| `availability.status` | available ? `in_stock` : `out_of_stock` | `stock_status` |
-| `selected_options[]` | `option1/2/3` + `options[]` names | `attributes[]` |
+## Downstream
 
-> **HARD RULE — Price conversion to minor units.** UCP prices are integers in minor units (cents). `$29.99` → `2999`. Always verify currency's minor unit factor (most are ×100, JPY is ×1, BHD is ×1000).
-
-## Step 3: Validate Products
-
-For each product, validate against UCP types:
-
-```
-✓ id is non-empty string
-✓ title is non-empty string
-✓ description has at least one of: plain, html, markdown
-✓ price_range.min <= price_range.max
-✓ price_range.min.amount >= 0
-✓ price_range.min.currency is valid ISO 4217
-✓ variants is non-empty array (at least 1)
-✓ each variant has id, title, description, price
-✓ each variant price.amount is integer >= 0
-✓ media URLs are valid and accessible (spot check 3)
-```
-
-Record validation results per product: PASS / FAIL with details.
-
-## Step 4: Output
-
-Save to `store/clients/{client_name}/`:
-
-### catalog.json
-```json
-{
-  "products": [
-    {
-      "id": "prod_001",
-      "title": "Example Product",
-      "description": {"plain": "A great product."},
-      "price_range": {
-        "min": {"amount": 2999, "currency": "USD"},
-        "max": {"amount": 2999, "currency": "USD"}
-      },
-      "url": "https://example.com/products/example",
-      "categories": [{"value": "Electronics", "taxonomy": "merchant"}],
-      "media": [{"type": "image", "url": "https://example.com/img/prod_001.jpg"}],
-      "variants": [
-        {
-          "id": "var_001",
-          "title": "Default",
-          "description": {"plain": "A great product."},
-          "price": {"amount": 2999, "currency": "USD"},
-          "sku": "EX-001",
-          "availability": {"available": true, "status": "in_stock"}
-        }
-      ]
-    }
-  ],
-  "metadata": {
-    "source": "shopify",
-    "total_products": 42,
-    "total_variants": 87,
-    "exported_at": "2026-03-25T12:00:00Z"
-  }
-}
-```
-
-### mapping-report.md
-```markdown
-# Catalog Mapping Report — {client_name}
-
-**Source:** {platform}
-**Products mapped:** {count}
-**Variants mapped:** {count}
-**Validation:** {passed}/{total} products pass
-
-## Field Coverage
-| UCP Field | Mapped | Source Field | Notes |
-|-----------|--------|-------------|-------|
-| title | ✓ | name | — |
-| description | ✓ | description | HTML stripped |
-| price | ✓ | price × 100 | Converted to minor units |
-| media | ✓ | images[].src | — |
-| sku | ✗ | — | Not available in source |
-
-## Issues Found
-{list of validation failures or data quality problems}
-```
-
-## Scripts
-
-| Script | Purpose | Dependencies |
-|--------|---------|-------------|
-| `map_catalog.py` | Multi-source catalog mapper | requests, beautifulsoup4, csv, json |
-
-## Collaboration
-
-```
-ucp-audit → (audit-report.md) → ucp-catalog (this skill)
-                                      │
-                                      ├── outputs → catalog.json
-                                      ├── outputs → mapping-report.md
-                                      │
-                                      └── consumed by → ucp-checkout (product data for line items)
-```
+- `ucp-checkout` can use `catalog.json` as local product data.
+- `acp-feed` can export `catalog.json` to OpenAI ACP feed JSON.

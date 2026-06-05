@@ -6,7 +6,6 @@ description: >
   and /.well-known/ucp presence. Outputs a scored diagnostic with
   actionable fix list. Use when a merchant wants to know how ready
   they are for AI commerce integration.
-argument-hint: "[merchant website URL]"
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, WebFetch
 ---
 
@@ -111,9 +110,14 @@ Scoring rubric (100 points total):
 | Public product API available | 10 | Storefront API or REST API accessible |
 | HTTPS enabled | 5 | Site loads over HTTPS |
 
-### Report Output Format
+### Output Contract
 
-Save to `store/clients/{client_name}/audit-report.md`:
+Save to `store/clients/{client_name}/`:
+
+- `audit-report.md` - human-readable readiness report
+- `audit.json` - machine-readable observations and score
+
+Markdown report format:
 
 ```markdown
 # UCP Readiness Audit — {merchant_name}

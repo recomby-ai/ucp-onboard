@@ -2,162 +2,150 @@
 
 English | [中文](README_CN.md)
 
-AI agent skills for onboarding merchants to [UCP (Universal Commerce Protocol)](https://github.com/Universal-Commerce-Protocol/ucp) — the open standard by Google, Shopify, and 20+ partners that lets AI agents discover and transact with businesses.
+Codex plugin and AI-agent skill pack for onboarding merchants to agentic
+commerce protocols.
 
-Currently covers product commerce. We're pushing for it to cover services too.
+The current core supports [UCP (Universal Commerce Protocol)](https://github.com/Universal-Commerce-Protocol/ucp)
+readiness, profile generation, catalog mapping, sandbox checkout server
+generation, and runtime validation. It also exports catalog data to OpenAI's
+[Agentic Commerce Protocol](https://developers.openai.com/commerce) product feed shape for ChatGPT Commerce onboarding.
 
-## What We're Building
+## What This Builds
 
-Give an AI agent a merchant's website URL, and it handles the full UCP integration:
+Give an agent a merchant URL or catalog export, then run the appropriate path:
 
+```text
+Merchant URL -> Audit -> Catalog -> UCP profile -> UCP checkout server -> Validate
+                         |
+                         +-> OpenAI ACP feed export
 ```
-Merchant URL → Audit → Profile → Catalog → Checkout → Validate → Live on UCP
-```
 
-## What We're Pushing For
+This repo is intentionally adapter-based: platform connectors normalize product
+data once, then protocol exporters prepare UCP or OpenAI ACP outputs.
 
-UCP currently defines `dev.ucp.shopping.*` — buying products. But commerce isn't just products. It's also **services**: consulting, design, AI agent labor, SaaS on-demand.
+## Protocol Matrix
 
-We submitted [Issue #303](https://github.com/Universal-Commerce-Protocol/ucp/issues/303) to the UCP consortium, proposing a Services Vertical:
-
-| | Shopping (today) | Services (our proposal) |
-|---|---|---|
-| What's traded | Products (SKU, price, inventory) | Services (scope, deliverables, capability) |
-| Pricing | Fixed | Fixed / usage-based / outcome-based / hourly |
-| Fulfillment | Physical shipping | Digital delivery + acceptance verification |
-| Lifecycle | `purchased → shipped → delivered` | `booked → in_progress → delivered → verified → settled` |
-
-Imagine: a Shopify seller tells Gemini "help me find someone to optimize my AI search ranking" → agent discovers service providers via UCP → compares scope/pricing → books engagement → verifies delivery → settles payment. **All through the protocol, no platform middleman.**
-
-UCP's [Vendor Namespace mechanism](https://github.com/Universal-Commerce-Protocol/.github/blob/main/CONTRIBUTING.md) allows anyone to prototype via `com.{vendor}.*` and propose graduation to core once adoption is proven. That's our path.
+| Layer | Protocol / API | Role in this repo |
+| --- | --- | --- |
+| Agent commerce transaction | UCP | Discovery profile, catalog/checkout capability planning, validation |
+| ChatGPT Commerce feed | OpenAI ACP | Product feed export for approved ChatGPT Commerce onboarding |
+| Payment authorization | AP2 / payment handlers | Referenced as a payment/security layer, not implemented here |
+| Source platforms | Shopify, CSV, JSON | Product data inputs for `ucp-catalog` |
+| Future connectors | WooCommerce, BigCommerce, Schema.org | Planned adapters, not claimed as implemented |
 
 ## Skills
 
 | Skill | What It Does | Script |
-|-------|-------------|--------|
-| **ucp-audit** | Scans a website, scores UCP readiness 0-100, identifies reusable assets and gaps | `audit_site.py` |
-| **ucp-profile** | Generates `/.well-known/ucp` business profile JSON with correct capabilities and payment handlers | `generate_profile.py` |
-| **ucp-catalog** | Maps Shopify / WooCommerce / CSV product data to UCP catalog schema (minor units, variants, media) | `map_catalog.py` |
-| **ucp-checkout** | Guides setup of checkout API based on [official UCP samples](https://github.com/Universal-Commerce-Protocol/samples) | SKILL.md |
-| **ucp-validate** | Validates profile structure + spec URL reachability, recommends official `ucp-schema` CLI for deep validation | `validate_ucp.py` |
+| --- | --- | --- |
+| **ucp-audit** | Scans a website, scores UCP readiness, identifies reusable assets and gaps | `audit_site.py` |
+| **ucp-profile** | Generates a draft `/.well-known/ucp` business profile from explicit inputs | `generate_profile.py` |
+| **ucp-catalog** | Maps Shopify / CSV / JSON product data into normalized catalog JSON | `map_catalog.py` |
+| **acp-feed** | Exports normalized catalog JSON to OpenAI ACP product feed JSON | `export_acp_feed.py` |
+| **ucp-checkout** | Generates a sandbox Python/FastAPI UCP checkout server | `generate_api.py` |
+| **ucp-validate** | Validates profile, catalog runtime, checkout lifecycle, and tool availability | `validate_ucp.py` |
+| **ucp-services-vertical** | Drafts vendor-namespace service commerce models | SKILL.md |
 
 ## Quick Start
 
 ```bash
 pip install requests beautifulsoup4 jsonschema
 
-# Full pipeline in one command
+# UCP-oriented pipeline
 python run_pipeline.py https://allbirds.com --name "Allbirds" --payment shopify
 
-# Or step by step:
-
-# 1. Audit
+# Step by step
 python skills/ucp-audit/scripts/audit_site.py https://allbirds.com
 
-# 2. Generate profile
 python skills/ucp-profile/scripts/generate_profile.py \
   --domain example.com --name "My Store" --payment stripe --transport rest
 
-# 3. Map catalog
 python skills/ucp-catalog/scripts/map_catalog.py \
-  --source shopify --url https://allbirds.com --currency USD
+  --source shopify --url https://allbirds.com --currency USD \
+  --output store/clients/allbirds/catalog.json \
+  --report store/clients/allbirds/mapping-report.md
 
-# 4. Validate
+python skills/ucp-checkout/scripts/generate_api.py \
+  --profile store/clients/allbirds/ucp-profile.json \
+  --catalog store/clients/allbirds/catalog.json \
+  --output-dir store/clients/allbirds/ucp-server
+
+python skills/acp-feed/scripts/export_acp_feed.py \
+  --input store/clients/allbirds/catalog.json \
+  --output store/clients/allbirds/acp-feed.json \
+  --target-country US
+
 python skills/ucp-validate/scripts/validate_ucp.py https://allbirds.com
 ```
+
+## Current Implementation Status
+
+| Area | Status |
+| --- | --- |
+| Codex plugin manifest | Implemented |
+| UCP audit | Implemented |
+| UCP profile generation | Implemented, with placeholders that must be filled |
+| Catalog mapping | Implemented for Shopify public products.json, CSV, and JSON |
+| OpenAI ACP feed export | Implemented from normalized catalog JSON |
+| UCP checkout server generation | Implemented for sandbox Python/FastAPI |
+| Runtime validation gate | Implemented for profile, catalog, checkout create/retrieve/update/cancel |
+| Full official UCP conformance testing | Still delegated to official tools |
 
 ## Tested Against Real Sites
 
 | Site | Audit Score | Validate | Notes |
-|------|------------|----------|-------|
+| --- | --- | --- | --- |
 | allbirds.com | 65/100 | PASS 11/11 | Shopify, MCP transport, 250 products / 2696 variants |
 | glossier.com | 90/100 | PASS 11/11 | Shopify, MCP transport, 127 products / 425 variants |
 | puddingheroes.com | 5/100 | FAIL 16/42 | Non-standard format, correctly flagged |
 
-See [`examples/glossier/`](examples/glossier/) for full sample output.
+See [`examples/glossier/`](examples/glossier/) for sample outputs.
 
-## How Validation Works
+## Validation
 
-We don't reinvent the wheel. Validation references official tools:
+This repo performs a local validation gate and still points to official tools
+for deeper conformance checks:
 
 | Layer | Tool | Source |
-|-------|------|--------|
-| Profile structure | Our `validate_ucp.py` | Checks required fields, namespace rules, URL reachability |
-| Full schema validation | [`ucp-schema`](https://github.com/Universal-Commerce-Protocol/ucp-schema) | Official Rust CLI: `cargo install ucp-schema` |
-| Checkout behavior | [`conformance`](https://github.com/Universal-Commerce-Protocol/conformance) | Official test suite (12 Python test files) |
-| External discovery | [UCPchecker.com](https://ucpchecker.com) | Community validator (2,800+ merchants monitored) |
+| --- | --- | --- |
+| Profile structure | `validate_ucp.py` | Required fields, capability basics, URL reachability |
+| Runtime catalog | `validate_ucp.py` | Search and lookup endpoint preflight |
+| Runtime checkout | `validate_ucp.py` | Create, retrieve, update, cancel, totals rules |
+| Full UCP schema validation | [`ucp-schema`](https://github.com/Universal-Commerce-Protocol/ucp-schema) | Official Rust CLI |
+| Checkout behavior | [`conformance`](https://github.com/Universal-Commerce-Protocol/conformance) | Official test suite |
+| ChatGPT Commerce feed review | [OpenAI Commerce docs](https://developers.openai.com/commerce) | ACP product feed guidance |
 
 ## Project Structure
 
-```
-├── run_pipeline.py                 One-command full pipeline
+```text
+├── .codex-plugin/plugin.json       Codex plugin manifest
+├── run_pipeline.py                 UCP-oriented pipeline
 ├── AGENTS.md                       Agent startup instructions
 ├── examples/glossier/              Real output samples
 └── skills/
     ├── ucp-audit/
-    │   ├── SKILL.md                Agent instructions
-    │   └── scripts/audit_site.py   Website scanner
     ├── ucp-profile/
-    │   ├── SKILL.md
-    │   └── scripts/generate_profile.py
     ├── ucp-catalog/
-    │   ├── SKILL.md
-    │   └── scripts/map_catalog.py  Supports Shopify / CSV / JSON
+    ├── acp-feed/
     ├── ucp-checkout/
-    │   └── SKILL.md                References official samples
-    └── ucp-validate/
-        ├── SKILL.md
-        └── scripts/validate_ucp.py
+    ├── ucp-validate/
+    └── ucp-services-vertical/
 ```
 
-## Using with AI Agents
+## Services Vertical
 
-Each `SKILL.md` is an instruction manual for AI agents. The agent reads it, runs the scripts, and produces deliverables.
+UCP currently centers on `dev.ucp.shopping.*`. This repo still tracks the
+Services Vertical idea: consulting, design, AI agent labor, and SaaS on-demand
+transactions need scope, deliverables, acceptance, and settlement semantics.
 
-- **NanoClaw / OpenClaw users:** Copy `skills/` into your agent's skill path
-- **Claude Code users:** Point Claude at a SKILL.md and give it a merchant URL
+That work now lives in `ucp-services-vertical` so shopping onboarding remains
+stable.
 
-## Security
+## Key Resources
 
-UCP has built-in security mechanisms (defined in spec, but merchants must implement them):
-
-- **Message Signatures** (RFC 9421) — ECDSA signing of requests/responses, prevents tampering and impersonation
-- **AP2 Mandates** — Cryptographic proof of user purchase authorization (SD-JWT), prevents unauthorized purchases
-- **Signals** — Platform-observed environment data (IP, UA) for fraud prevention
-- **Buyer Consent** — GDPR/CCPA consent transmission
-
-See the [UCP Security spec](https://github.com/Universal-Commerce-Protocol/ucp/blob/main/docs/specification/signatures.md) for details.
-
-## UCP Protocol Overview
-
-```
-AI Agent                          Merchant
-   │                                 │
-   ├── GET /.well-known/ucp ────────►│  Discovery
-   │◄── capabilities + payment ──────┤
-   │                                 │
-   ├── POST /catalog/search ────────►│  Product Search
-   │◄── products[] ──────────────────┤
-   │                                 │
-   ├── POST /checkout (create) ─────►│  Checkout
-   │◄── session {id, totals} ────────┤
-   │                                 │
-   ├── POST /checkout (complete) ───►│  Payment
-   │◄── order confirmation ──────────┤
-```
-
-**Key resources:**
 - [UCP Specification](https://github.com/Universal-Commerce-Protocol/ucp)
-- [Official Samples](https://github.com/Universal-Commerce-Protocol/samples) (Python/FastAPI + Node.js/Hono)
-- [Official Python SDK](https://github.com/Universal-Commerce-Protocol/python-sdk)
-- [Our Services Vertical Proposal (Issue #303)](https://github.com/Universal-Commerce-Protocol/ucp/issues/303)
-
-## Contributing
-
-1. Fork the repo
-2. Add or improve a skill
-3. Test against a real merchant site
-4. Submit a PR with test results
+- [UCP Samples](https://github.com/Universal-Commerce-Protocol/samples)
+- [OpenAI Agentic Commerce Protocol docs](https://developers.openai.com/commerce)
+- [OpenAI Instant Checkout announcement](https://openai.com/index/buy-it-in-chatgpt/)
 
 ## License
 

@@ -1,34 +1,44 @@
 # UCP Onboard Agent
 
 ## What This Is
-An agent with 5 skills that helps merchants integrate with UCP (Universal Commerce Protocol), making their products discoverable and transactable by AI agents.
+
+A Codex plugin and skill pack for merchant onboarding into agentic commerce.
+It supports UCP readiness/profile/catalog work, sandbox checkout server
+generation, runtime validation, services vertical drafting, and OpenAI ACP
+product feed export from normalized catalog data.
 
 ## Skill Pipeline
-```
-ucp-audit → ucp-profile + ucp-catalog → ucp-checkout → ucp-validate
+
+```text
+UCP:        ucp-audit -> ucp-profile + ucp-catalog -> ucp-checkout -> ucp-validate
+OpenAI ACP: ucp-catalog -> acp-feed
 ```
 
 ## Directory Structure
-```
+
+```text
 skills/
-├── ucp-audit/      — Scan merchant site, output readiness report
-├── ucp-profile/    — Generate /.well-known/ucp business profile
-├── ucp-catalog/    — Map product data to UCP catalog schema
-├── ucp-checkout/   — Generate checkout API code
-└── ucp-validate/   — End-to-end integration validation
+├── ucp-audit/      - Scan merchant site and output readiness report
+├── ucp-profile/    - Generate /.well-known/ucp business profile
+├── ucp-catalog/    - Map Shopify/CSV/JSON data to catalog JSON
+├── acp-feed/       - Export catalog JSON to OpenAI ACP feed JSON
+├── ucp-checkout/   - Generate sandbox FastAPI checkout server
+├── ucp-validate/   - Validate profile, catalog, and checkout runtime
+└── ucp-services-vertical/ - Draft service commerce vendor namespace models
 ```
 
 ## Conventions
-- Each skill has: SKILL.md, references/, scripts/
-- Scripts are Python 3.10+, stdlib + requests + beautifulsoup4
-- All output files go to store/clients/{client_name}/
-- JSON schemas follow UCP spec version 2026-01-23
-- Amounts are always in minor units (cents)
-- Dates are always RFC 3339
 
-## Key UCP Resources
-- Spec: https://github.com/Universal-Commerce-Protocol/ucp
-- Docs: https://ucp.dev/documentation/
-- Profile schema: source/discovery/profile_schema.json
-- Checkout schema: source/schemas/shopping/checkout.json
-- Catalog schema: source/schemas/shopping/catalog_search.json
+- Keep `SKILL.md` concise and accurate.
+- Put deterministic transformations in `scripts/`.
+- Put protocol notes and long mappings in `references/`.
+- All output files go to `store/clients/{client_name}/`.
+- Amounts are always in minor units.
+- Do not store secrets in public JSON artifacts.
+
+## Key Resources
+
+- UCP spec: https://github.com/Universal-Commerce-Protocol/ucp
+- UCP docs: https://ucp.dev/documentation/
+- OpenAI Commerce docs: https://developers.openai.com/commerce
+- OpenAI ACP announcement: https://openai.com/index/buy-it-in-chatgpt/

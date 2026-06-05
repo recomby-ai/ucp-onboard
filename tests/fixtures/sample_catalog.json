@@ -1,0 +1,55 @@
+{
+  "products": [
+    {
+      "id": "prod_1",
+      "title": "Trail Shoe",
+      "description": {
+        "plain": "A factual trail shoe description."
+      },
+      "url": "https://example.com/products/trail shoe",
+      "media": [
+        {
+          "type": "image",
+          "url": "https://example.com/images/trail shoe.jpg"
+        }
+      ],
+      "categories": [
+        {
+          "value": "Shoes",
+          "taxonomy": "merchant"
+        }
+      ],
+      "variants": [
+        {
+          "id": "var_1",
+          "title": "Black / 9",
+          "description": {
+            "plain": "Black size 9."
+          },
+          "price": {
+            "amount": 9900,
+            "currency": "USD"
+          },
+          "availability": {
+            "available": true,
+            "status": "in_stock"
+          },
+          "selected_options": [
+            {
+              "name": "Color",
+              "value": "Black"
+            },
+            {
+              "name": "Size",
+              "value": "9"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "source": "test",
+    "currency": "USD"
+  }
+}

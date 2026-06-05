@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""UCP Onboarding Pipeline — run all skills end-to-end for a merchant.
+"""UCP Onboarding Pipeline — run audit/profile/catalog/validation for a merchant.
 
 Usage:
   python run_pipeline.py https://allbirds.com --name "Allbirds" --payment shopify
@@ -39,6 +39,12 @@ def main():
     parser.add_argument("--source", default="shopify", choices=["shopify", "csv", "json"],
                         help="Catalog data source (default: shopify)")
     parser.add_argument("--catalog-file", help="File path for csv/json catalog source")
+    parser.add_argument("--export-acp", action="store_true",
+                        help="Export catalog.json to OpenAI ACP feed JSON")
+    parser.add_argument("--generate-checkout", action="store_true",
+                        help="Generate a sandbox FastAPI UCP checkout server")
+    parser.add_argument("--target-country", default="US",
+                        help="Target country for ACP feed export (default: US)")
     parser.add_argument("--output-dir", help="Output directory (default: store/clients/{domain})")
     args = parser.parse_args()
 
@@ -60,9 +66,10 @@ def main():
 
     # Step 1: Audit
     audit_output = os.path.join(output_dir, "audit-report.md")
+    audit_json_output = os.path.join(output_dir, "audit.json")
     ok = run_script(
         os.path.join(SKILLS_DIR, "ucp-audit", "scripts", "audit_site.py"),
-        [url, "-o", audit_output],
+        [url, "-o", audit_output, "--json-output", audit_json_output],
         "Audit website",
     )
     if not ok:
@@ -86,7 +93,8 @@ def main():
 
     # Step 3: Map catalog
     catalog_output = os.path.join(output_dir, "catalog.json")
-    catalog_args = ["--source", args.source, "--currency", args.currency, "-o", catalog_output]
+    mapping_report = os.path.join(output_dir, "mapping-report.md")
+    catalog_args = ["--source", args.source, "--currency", args.currency, "-o", catalog_output, "--report", mapping_report]
     if args.source == "shopify":
         catalog_args.extend(["--url", url])
     elif args.catalog_file:
@@ -104,11 +112,38 @@ def main():
         if not ok:
             print("\n[WARN] Catalog mapping had issues, continuing...")
 
+    # Optional: Export OpenAI ACP feed
+    if args.export_acp and os.path.exists(catalog_output):
+        acp_output = os.path.join(output_dir, "acp-feed.json")
+        ok = run_script(
+            os.path.join(SKILLS_DIR, "acp-feed", "scripts", "export_acp_feed.py"),
+            ["--input", catalog_output, "--output", acp_output, "--target-country", args.target_country],
+            "Export OpenAI ACP feed",
+        )
+        if not ok:
+            print("\n[WARN] ACP feed export had issues, review acp-feed-report.md")
+    elif args.export_acp:
+        print("\n[SKIP] ACP feed export — catalog.json was not created")
+
+    # Optional: Generate sandbox checkout server
+    if args.generate_checkout and os.path.exists(profile_output) and os.path.exists(catalog_output):
+        checkout_dir = os.path.join(output_dir, "ucp-server")
+        ok = run_script(
+            os.path.join(SKILLS_DIR, "ucp-checkout", "scripts", "generate_api.py"),
+            ["--profile", profile_output, "--catalog", catalog_output, "--output-dir", checkout_dir, "--force"],
+            "Generate sandbox UCP checkout server",
+        )
+        if not ok:
+            print("\n[WARN] Checkout server generation had issues")
+    elif args.generate_checkout:
+        print("\n[SKIP] Checkout server generation — profile or catalog missing")
+
     # Step 4: Validate
     validate_output = os.path.join(output_dir, "validation-report.md")
+    validate_json_output = os.path.join(output_dir, "validation.json")
     run_script(
         os.path.join(SKILLS_DIR, "ucp-validate", "scripts", "validate_ucp.py"),
-        [url, "-o", validate_output],
+        [url, "-o", validate_output, "--json-output", validate_json_output],
         "Validate UCP integration",
     )
 
@@ -126,10 +161,12 @@ def main():
 
     print(f"\nNext steps:")
     print(f"  1. Review audit-report.md for gaps")
-    print(f"  2. Fill FILL_IN placeholders in ucp-profile.json")
-    print(f"  3. Deploy profile to {domain}/.well-known/ucp")
-    print(f"  4. Set up checkout API (see skills/ucp-checkout/SKILL.md)")
-    print(f"  5. Run full validation: ucp-schema validate ucp-profile.json")
+    print(f"  2. Use audit.json and mapping-report.md for downstream automation")
+    print(f"  3. Fill FILL_IN placeholders in ucp-profile.json")
+    print(f"  4. Deploy profile to {domain}/.well-known/ucp")
+    print(f"  5. Generate/run ucp-server for sandbox checkout preflight when needed")
+    print(f"  6. If using ChatGPT Commerce, review acp-feed.json and confirm partner approval")
+    print(f"  7. Run official validation: ucp-schema validate ucp-profile.json")
 
     return 0
 

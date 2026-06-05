@@ -13,8 +13,8 @@ Usage:
 import argparse
 import csv
 import json
-import math
 import sys
+from datetime import datetime, timezone
 
 try:
     import requests
@@ -184,6 +184,77 @@ def validate_products(products):
     return errors
 
 
+def field_coverage(products):
+    """Return simple field coverage counts for mapped products."""
+    fields = {
+        "title": 0,
+        "description": 0,
+        "price": 0,
+        "media": 0,
+        "sku": 0,
+        "availability": 0,
+        "categories": 0,
+    }
+    for product in products:
+        if product.get("title"):
+            fields["title"] += 1
+        if product.get("description"):
+            fields["description"] += 1
+        if product.get("media"):
+            fields["media"] += 1
+        if product.get("categories"):
+            fields["categories"] += 1
+        variants = product.get("variants", [])
+        if any(v.get("price") for v in variants):
+            fields["price"] += 1
+        if any(v.get("sku") for v in variants):
+            fields["sku"] += 1
+        if any(v.get("availability") for v in variants):
+            fields["availability"] += 1
+    return fields
+
+
+def generate_mapping_report(source, currency, products, errors):
+    """Generate a markdown mapping report."""
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    total_variants = sum(len(p.get("variants", [])) for p in products)
+    coverage = field_coverage(products)
+    total = len(products) or 1
+    rows = "\n".join(
+        f"| {name} | {count}/{len(products)} | {round((count / total) * 100)}% |"
+        for name, count in coverage.items()
+    )
+    if not rows:
+        rows = "| (none) | 0/0 | 0% |"
+
+    if errors:
+        issues = "\n".join(f"- {e}" for e in errors[:50])
+        if len(errors) > 50:
+            issues += f"\n- ... {len(errors) - 50} more"
+    else:
+        issues = "No validation errors."
+
+    return f"""# Catalog Mapping Report
+
+**Source:** {source}
+**Currency:** {currency}
+**Date:** {now}
+**Products mapped:** {len(products)}
+**Variants mapped:** {total_variants}
+**Validation errors:** {len(errors)}
+
+## Field Coverage
+
+| Field | Products | Coverage |
+| --- | ---: | ---: |
+{rows}
+
+## Issues
+
+{issues}
+"""
+
+
 def main():
     parser = argparse.ArgumentParser(description="Map product data to UCP catalog format")
     parser.add_argument("--source", required=True, choices=["shopify", "csv", "json"],
@@ -192,6 +263,7 @@ def main():
     parser.add_argument("--file", help="File path (for csv/json source)")
     parser.add_argument("--currency", default="USD", help="ISO 4217 currency code (default: USD)")
     parser.add_argument("--output", "-o", help="Output file path (default: stdout)")
+    parser.add_argument("--report", help="Optional mapping report markdown path")
     args = parser.parse_args()
 
     if args.source == "shopify":
@@ -227,7 +299,7 @@ def main():
     # Count stats
     total_variants = sum(len(p.get("variants", [])) for p in products)
 
-    output = json.dumps({
+    payload = {
         "products": products,
         "metadata": {
             "source": args.source,
@@ -236,7 +308,8 @@ def main():
             "currency": args.currency,
             "validation_errors": len(errors),
         }
-    }, indent=2)
+    }
+    output = json.dumps(payload, indent=2)
 
     if args.output:
         with open(args.output, "w") as f:
@@ -244,6 +317,11 @@ def main():
         print(f"Catalog saved to {args.output} ({len(products)} products, {total_variants} variants)", file=sys.stderr)
     else:
         print(output)
+
+    if args.report:
+        with open(args.report, "w") as f:
+            f.write(generate_mapping_report(args.source, args.currency, products, errors))
+        print(f"Mapping report saved to {args.report}", file=sys.stderr)
 
 
 if __name__ == "__main__":

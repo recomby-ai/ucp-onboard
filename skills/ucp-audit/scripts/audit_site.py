@@ -341,15 +341,15 @@ def generate_report(url, profile, platform, platform_conf, structured, payments,
 5. Validate with `ucp-validate`"""
     elif platform[0] == "woocommerce":
         path = """1. Generate UCP profile with `ucp-profile` skill
-2. Map WooCommerce REST API products to UCP catalog with `ucp-catalog`
-3. Generate checkout API with `ucp-checkout` (PHP/Laravel recommended)
+2. Export WooCommerce products to CSV or add an authenticated WooCommerce connector
+3. Map exported products to catalog.json with `ucp-catalog`
 4. Deploy alongside existing WordPress installation
 5. Validate with `ucp-validate`"""
     else:
         path = """1. Run `ucp-audit` to identify reusable data assets (done)
 2. Generate UCP profile with `ucp-profile` skill
 3. Export product data to CSV, map with `ucp-catalog`
-4. Generate checkout API with `ucp-checkout`
+4. Implement checkout API using `ucp-checkout` guidance
 5. Deploy API and /.well-known/ucp profile
 6. Validate with `ucp-validate`"""
 
@@ -406,6 +406,7 @@ def main():
     parser = argparse.ArgumentParser(description="UCP Readiness Audit")
     parser.add_argument("url", help="Merchant website URL")
     parser.add_argument("--output", "-o", help="Output file path (default: stdout)")
+    parser.add_argument("--json-output", help="Optional machine-readable JSON output file")
     parser.add_argument("--json", action="store_true", help="Output raw JSON instead of markdown")
     args = parser.parse_args()
 
@@ -472,17 +473,18 @@ def main():
 
     # Calculate score
     score = calculate_score(profile, platform[0], structured, payments, has_api)
+    result_data = {
+        "url": url,
+        "score": score,
+        "profile": profile,
+        "platform": {"name": platform[0], "confidence": platform[1]},
+        "structured_data": structured,
+        "payments": payments,
+        "api": {"available": has_api, "type": api_type},
+    }
 
     if args.json:
-        output = json.dumps({
-            "url": url,
-            "score": score,
-            "profile": profile,
-            "platform": {"name": platform[0], "confidence": platform[1]},
-            "structured_data": structured,
-            "payments": payments,
-            "api": {"available": has_api, "type": api_type},
-        }, indent=2)
+        output = json.dumps(result_data, indent=2)
     else:
         output = generate_report(url, profile, platform, platform, structured, payments, has_api, api_type, score)
 
@@ -492,6 +494,12 @@ def main():
         print(f"\nReport saved to {args.output}")
     else:
         print("\n" + output)
+
+    if args.json_output:
+        with open(args.json_output, "w") as f:
+            json.dump(result_data, f, indent=2)
+            f.write("\n")
+        print(f"JSON saved to {args.json_output}")
 
     print(f"\nScore: {score}/100")
     return 0 if score > 0 else 1

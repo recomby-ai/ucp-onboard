@@ -1,0 +1,47 @@
+{
+  "ucp": {
+    "version": "2026-01-23",
+    "services": {
+      "dev.ucp.shopping": [
+        {
+          "version": "2026-01-23",
+          "spec": "https://ucp.dev/specification/overview/",
+          "transport": "rest",
+          "endpoint": "http://localhost:8000/ucp/v1",
+          "schema": "https://ucp.dev/services/shopping/openapi.json"
+        }
+      ]
+    },
+    "capabilities": {
+      "dev.ucp.shopping.checkout": [
+        {
+          "version": "2026-01-23",
+          "spec": "https://ucp.dev/2026-01-23/specification/checkout",
+          "schema": "https://ucp.dev/2026-01-23/schemas/shopping/checkout.json"
+        }
+      ],
+      "dev.ucp.shopping.catalog.search": [
+        {
+          "version": "2026-01-23",
+          "spec": "https://ucp.dev/2026-01-23/specification/catalog/search",
+          "schema": "https://ucp.dev/2026-01-23/schemas/shopping/catalog_search.json"
+        }
+      ],
+      "dev.ucp.shopping.catalog.lookup": [
+        {
+          "version": "2026-01-23",
+          "spec": "https://ucp.dev/2026-01-23/specification/catalog/lookup",
+          "schema": "https://ucp.dev/2026-01-23/schemas/shopping/catalog_lookup.json"
+        }
+      ]
+    },
+    "payment_handlers": {
+      "com.stripe.payment_element": [
+        {
+          "id": "stripe_default",
+          "version": "2026-01-23"
+        }
+      ]
+    }
+  }
+}
