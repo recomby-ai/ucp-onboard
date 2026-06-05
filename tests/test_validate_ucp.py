@@ -43,6 +43,21 @@ class ValidateUcpTest(unittest.TestCase):
         summary = validate_ucp.summarize(checks)
         self.assertEqual(summary["result"], "CONDITIONAL PASS")
 
+    def test_official_schema_validation(self):
+        try:
+            import jsonschema  # noqa: F401
+        except ImportError:
+            self.skipTest("jsonschema not installed")
+        if not Path(validate_ucp.SCHEMA_DIR).is_dir():
+            self.skipTest("vendored schemas not present")
+
+        profile = json.loads(PROFILE.read_text())
+        status, detail, errors = validate_ucp.validate_profile_schema(profile)
+        self.assertEqual(status, "ok", f"{detail} {errors}")
+
+        status, detail, _ = validate_ucp.validate_profile_schema({"ucp": {"version": "bad"}})
+        self.assertEqual(status, "fail", detail)
+
 
 if __name__ == "__main__":
     unittest.main()

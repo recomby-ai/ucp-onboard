@@ -105,6 +105,7 @@ also backs the Codex plugin (`.codex-plugin/plugin.json`).
 | OpenAI ACP feed export | Implemented from normalized catalog JSON |
 | UCP checkout server generation | Implemented for sandbox Python/FastAPI |
 | Runtime validation gate | Implemented for profile, catalog, checkout create/retrieve/update/cancel |
+| Offline official profile-schema validation | Implemented against vendored UCP `2026-04-08` schemas (jsonschema) |
 | Full official UCP conformance testing | Still delegated to official tools |
 
 ## Tested Against Real Sites
@@ -125,6 +126,7 @@ for deeper conformance checks:
 | Layer | Tool | Source |
 | --- | --- | --- |
 | Profile structure | `validate_ucp.py` | Required fields, capability basics, URL reachability |
+| Offline profile schema | `validate_ucp.py` + `refs/ucp-schema/` | Vendored official UCP profile schema (`2026-04-08`) via jsonschema |
 | Runtime catalog | `validate_ucp.py` | Search and lookup endpoint preflight |
 | Runtime checkout | `validate_ucp.py` | Create, retrieve, update, cancel, totals rules |
 | Full UCP schema validation | [`ucp-schema`](https://github.com/Universal-Commerce-Protocol/ucp-schema) | Official Rust CLI |

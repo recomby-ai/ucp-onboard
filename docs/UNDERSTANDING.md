@@ -230,11 +230,16 @@ AGENTS.md 的指令是"**选匹配目标的最小路径**"——
 | OpenAI ACP | developers.openai.com/commerce（含 `specs/api/products`） | ACP feed 字段标准 |
 | 示例产物 | `examples/glossier/*` | 一份端到端参考输出 |
 
-### 8.3 一个已知缺口（改动切入点）
-项目最该依赖的参考（官方 JSON Schema）目前**没有被真正接进来**：
-`requirements.txt` 装了 `jsonschema` 却无任何脚本 `import` 它，docstring 声称
-"validates against official schema" 但代码里只有手写字段检查。这既是「声明≠实现」
-的 bug，也是未来把官方 schema 接入 `validate` 的天然切入点。
+### 8.3 已闭合的缺口：官方 schema 已真正接入
+> 历史：曾经 `requirements.txt` 装了 `jsonschema` 却无人 import，docstring 谎称
+> "validates against official schema"。这是「声明≠实现」的 bug。
+
+现在已修复并**真正实现**：官方 `v2026-04-08` 的 profile schema 树（共 8 个文件，
+沿 `$ref` 传递抓取）已 vendored 到 `refs/ucp-schema/2026-04-08/`，`ucp-validate`
+用 `jsonschema` + `referencing` 做**离线**校验（无 `jsonschema` 时优雅 SKIP）。
+关键细节：上游 `$ref` 按**文件路径**（相对 `source/`）解析而非按 `$id`，所以
+加载时按路径建 registry 并剥掉 `$id`。我们自己生成的 profile（REST/MCP）实测
+**0 error** 通过官方 schema，印证了生成端的契约正确性。
 
 ---
 

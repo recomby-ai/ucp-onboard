@@ -30,11 +30,12 @@ python ${CLAUDE_SKILL_DIR}/scripts/validate_ucp.py \
   network transports
 - payment handler entries include `id` and `version`
 - up to five capability `spec`/`schema` URLs are reachable
+- offline validation against the vendored official UCP profile schema
+  (`refs/ucp-schema/2026-04-08/`), when `jsonschema` is installed
 - local availability of official `ucp-schema` and conformance tooling
 
 ## What It Does Not Yet Check
 
-- Full cross-file official schema validation
 - Catalog search/lookup behavior
 - Checkout create/update/retrieve/cancel lifecycle
 - Payment handler runtime behavior

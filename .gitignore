@@ -8,4 +8,7 @@ store/
 dist/
 build/
 .DS_Store
-refs/
+# refs/ holds locally-cloned official tools (ignored), except the vendored
+# schema bundle that ucp-validate needs at runtime.
+refs/*
+!refs/ucp-schema/
