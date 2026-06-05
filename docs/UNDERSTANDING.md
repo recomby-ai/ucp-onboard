@@ -3,6 +3,8 @@
 > 这份文档记录的是"我如何理解这个项目"——不是 API 手册，而是**心智模型**：
 > 它解决什么问题、为什么这样设计、各部分如何互相咬合、哪里是脆弱点。
 > 理解到位了，改代码就不会改错方向。
+>
+> 它是一份**活文档（稳定的锚）**：认知会随着对项目和上游 spec 的深入而更新。
 
 ---
 
@@ -198,7 +200,45 @@ AGENTS.md 的指令是"**选匹配目标的最小路径**"——
 
 ---
 
-## 8. 一页速记（TL;DR）
+## 8. 外部权威参考（真理来源 / 改动锚点）
+
+> 改任何东西前先锚定这些来源，否则就是凭记忆瞎改——违反「与上游 spec 一致」那条不变量。
+
+### 8.1 项目内部参考（`skills/*/references/`）
+这是项目自己写下的契约说明，已与代码基本一致，可直接当改动依据：
+
+| 参考 | 内容 |
+|------|------|
+| `ucp-profile/references/capabilities.md` | 能力开关；明确写着当前版本 `2026-01-23`、"只声明能真正服务的能力" |
+| `ucp-checkout/references/checkout-lifecycle.md` | checkout 生命周期 + totals 规则（与 validate 完全一致） |
+| `ucp-catalog/references/currency-minor-units.md` | 货币最小单位倍率表（JPY=1、BHD=1000…） |
+| `ucp-catalog/references/source-mapping.md` | 数据源契约；"未来连接器必须产出同一份 catalog.json" |
+| `acp-feed/references/openai-acp.md` | ACP 字段映射表（`selected_options → variant_options` 等） |
+| `ucp-validate/references/check-matrix.md` | 验证分层矩阵 |
+| `ucp-audit/references/{platform-signatures,scoring}.md` | 平台指纹、评分表 |
+| `ucp-services-vertical/references/services-model.md` | 服务业模型草案 |
+
+> 这些内部参考**反向印证**了代码意图，是判断"改得对不对"的第一手依据。
+
+### 8.2 外部权威参考（金标准，按权威度排序）
+
+| 参考 | 地址 | 作用 |
+|------|------|------|
+| **UCP 官方 JSON Schema** ⭐ | upstream `source/discovery/profile_schema.json`、`source/schemas/shopping/{checkout,catalog_search}.json` | profile/catalog/checkout 长啥样的**金标准** |
+| UCP spec / releases | github.com/Universal-Commerce-Protocol/ucp（现 `2026-04-08`） | 版本、新能力（Cart）、破坏性变更 |
+| UCP 文档 | ucp.dev/documentation/ | 概念与指南 |
+| OpenAI ACP | developers.openai.com/commerce（含 `specs/api/products`） | ACP feed 字段标准 |
+| 示例产物 | `examples/glossier/*` | 一份端到端参考输出 |
+
+### 8.3 一个已知缺口（改动切入点）
+项目最该依赖的参考（官方 JSON Schema）目前**没有被真正接进来**：
+`requirements.txt` 装了 `jsonschema` 却无任何脚本 `import` 它，docstring 声称
+"validates against official schema" 但代码里只有手写字段检查。这既是「声明≠实现」
+的 bug，也是未来把官方 schema 接入 `validate` 的天然切入点。
+
+---
+
+## 9. 一页速记（TL;DR）
 
 - **是什么**：把电商网站翻译成 AI 可交易接口的**协议适配流水线**（B2B skill 包 / Codex 插件）。
 - **解决什么**：让商家低成本接入 UCP 和 OpenAI ACP，变得"可被 agent 发现 + 下单"。
