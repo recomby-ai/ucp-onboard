@@ -18,12 +18,17 @@ class GenerateProfileTest(unittest.TestCase):
             "Example Store",
             "stripe",
             "rest",
-            ["checkout", "catalog"],
+            ["checkout", "catalog", "cart"],
         )
         ucp = profile["ucp"]
-        self.assertEqual(ucp["version"], "2026-01-23")
+        self.assertEqual(ucp["version"], "2026-04-08")
         self.assertIn("dev.ucp.shopping.checkout", ucp["capabilities"])
         self.assertIn("dev.ucp.shopping.catalog.search", ucp["capabilities"])
+        self.assertIn("dev.ucp.shopping.cart", ucp["capabilities"])
+        self.assertEqual(
+            ucp["capabilities"]["dev.ucp.shopping.cart"][0]["extends"],
+            "dev.ucp.shopping.checkout",
+        )
         self.assertIn("com.stripe.payment_element", ucp["payment_handlers"])
         self.assertEqual(
             ucp["services"]["dev.ucp.shopping"][0]["endpoint"],

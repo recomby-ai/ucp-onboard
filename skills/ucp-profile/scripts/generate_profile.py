@@ -15,7 +15,7 @@ import json
 import sys
 from copy import deepcopy
 
-UCP_VERSION = "2026-01-23"
+UCP_VERSION = "2026-04-08"
 
 # === Payment handler templates (from real Shopify/Google/Stripe profiles) ===
 
@@ -130,6 +130,16 @@ CAPABILITIES = {
                 "schema": f"https://ucp.dev/{UCP_VERSION}/schemas/shopping/catalog_lookup.json",
             }
         ],
+    },
+    "cart": {
+        "dev.ucp.shopping.cart": [
+            {
+                "version": UCP_VERSION,
+                "spec": f"https://ucp.dev/{UCP_VERSION}/specification/cart",
+                "schema": f"https://ucp.dev/{UCP_VERSION}/schemas/shopping/cart.json",
+                "extends": "dev.ucp.shopping.checkout",
+            }
+        ]
     },
     "fulfillment": {
         "dev.ucp.shopping.fulfillment": [
@@ -249,7 +259,7 @@ def main():
     parser.add_argument("--transport", default="rest", choices=["rest", "mcp"],
                         help="API transport (default: rest)")
     parser.add_argument("--caps", default="checkout,fulfillment,discount,order",
-                        help="Comma-separated capabilities: checkout,catalog,fulfillment,discount,order")
+                        help="Comma-separated capabilities: checkout,cart,catalog,fulfillment,discount,order")
     parser.add_argument("--output", "-o", help="Output file path (default: stdout)")
     args = parser.parse_args()
 

@@ -80,7 +80,7 @@ def main():
     # produced (shopify source, or csv/json with a catalog file), so the
     # profile's declared capabilities match the deliverables we generate.
     will_produce_catalog = args.source == "shopify" or bool(args.catalog_file)
-    caps = ("checkout,catalog,fulfillment,discount,order"
+    caps = ("checkout,catalog,cart,fulfillment,discount,order"
             if will_produce_catalog else "checkout,fulfillment,discount,order")
 
     profile_output = os.path.join(output_dir, "ucp-profile.json")
