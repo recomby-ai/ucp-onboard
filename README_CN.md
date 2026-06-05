@@ -46,7 +46,7 @@ runtime validation。同时新增 OpenAI [Agentic Commerce Protocol](https://dev
 ## 快速开始
 
 ```bash
-pip install requests beautifulsoup4 jsonschema
+pip install requests beautifulsoup4
 
 # UCP 方向的一键流程
 python run_pipeline.py https://allbirds.com --name "Allbirds" --payment shopify

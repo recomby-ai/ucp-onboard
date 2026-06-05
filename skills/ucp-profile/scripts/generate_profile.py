@@ -2,7 +2,8 @@
 """Generate a UCP business profile (/.well-known/ucp) for a merchant.
 
 Based on official UCP samples discovery_profile.json template format.
-Validates output against official profile_schema.json.
+Performs basic placeholder/structure checks only; run the official
+ucp-schema CLI for full schema validation.
 
 Usage:
   python generate_profile.py --domain example.com --name "My Store" --payment stripe

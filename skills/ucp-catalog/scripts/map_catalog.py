@@ -2,7 +2,7 @@
 """Map merchant product data to UCP catalog schema format.
 
 Supports: Shopify (products.json), CSV, raw JSON.
-Output validated against official UCP types/product.json schema.
+Performs basic field/structure checks only (not full JSON Schema validation).
 
 Usage:
   python map_catalog.py --source shopify --url https://store.myshopify.com

@@ -48,7 +48,7 @@ data once, then protocol exporters prepare UCP or OpenAI ACP outputs.
 ## Quick Start
 
 ```bash
-pip install requests beautifulsoup4 jsonschema
+pip install requests beautifulsoup4
 
 # UCP-oriented pipeline
 python run_pipeline.py https://allbirds.com --name "Allbirds" --payment shopify
