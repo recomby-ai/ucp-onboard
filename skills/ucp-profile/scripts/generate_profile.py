@@ -158,7 +158,7 @@ CAPABILITIES = {
         "dev.ucp.shopping.order": [
             {
                 "version": UCP_VERSION,
-                "spec": f"https://ucp.dev/{UCP_VERSION}/specs/shopping/order",
+                "spec": f"https://ucp.dev/{UCP_VERSION}/specification/order",
                 "schema": f"https://ucp.dev/{UCP_VERSION}/schemas/shopping/order.json",
             }
         ]

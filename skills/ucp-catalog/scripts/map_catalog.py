@@ -13,6 +13,7 @@ Usage:
 import argparse
 import csv
 import json
+import re
 import sys
 from datetime import datetime, timezone
 
@@ -26,6 +27,12 @@ HEADERS = {"User-Agent": "UCP-Catalog/1.0 (+https://recomby.ai)"}
 
 # Currency minor unit multipliers (most are 100)
 MINOR_UNITS = {"JPY": 1, "KRW": 1, "BHD": 1000, "KWD": 1000, "OMR": 1000}
+
+
+def strip_html(html, limit=1000):
+    """Strip HTML tags and collapse whitespace; truncate to `limit` chars."""
+    text = re.sub(r"<[^>]+>", " ", html or "")
+    return re.sub(r"\s+", " ", text).strip()[:limit]
 
 
 def to_minor(price_str, currency):
@@ -59,7 +66,7 @@ def map_shopify(url, currency="USD", limit=250):
             variant = {
                 "id": str(v.get("id", "")),
                 "title": v.get("title", "Default"),
-                "description": {"plain": p.get("body_html", "").replace("<br>", " ").replace("<br/>", " ")[:500] if p.get("body_html") else p.get("title", "")},
+                "description": {"plain": strip_html(p.get("body_html"), 500) or p.get("title", "")},
                 "price": {"amount": price_amount, "currency": currency},
             }
             if v.get("sku"):
@@ -85,11 +92,7 @@ def map_shopify(url, currency="USD", limit=250):
         max_price = max(prices) if prices else 0
 
         # Strip HTML from description
-        desc = p.get("body_html", "") or ""
-        import re
-        desc_plain = re.sub(r"<[^>]+>", " ", desc).strip()[:1000]
-        if not desc_plain:
-            desc_plain = p.get("title", "")
+        desc_plain = strip_html(p.get("body_html"), 1000) or p.get("title", "")
 
         product = {
             "id": str(p.get("id", "")),
