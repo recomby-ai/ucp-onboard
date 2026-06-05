@@ -1,0 +1,20 @@
+{
+  "name": "ucp-onboard",
+  "version": "0.3.0",
+  "description": "Audit merchants and prepare agentic commerce integrations: UCP readiness audit, /.well-known/ucp profile, catalog mapping, sandbox FastAPI checkout server, end-to-end validation, and OpenAI ACP feed export.",
+  "author": {
+    "name": "recomby-ai",
+    "url": "https://github.com/recomby-ai"
+  },
+  "homepage": "https://github.com/recomby-ai/ucp-onboard",
+  "repository": "https://github.com/recomby-ai/ucp-onboard",
+  "license": "MIT",
+  "keywords": [
+    "commerce",
+    "ucp",
+    "agentic-commerce",
+    "openai-acp",
+    "shopify"
+  ],
+  "skills": "./skills/"
+}
